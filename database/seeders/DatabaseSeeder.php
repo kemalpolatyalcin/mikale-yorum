@@ -4,10 +4,55 @@ use Illuminate\Database\Seeder;
 use App\Models\Waiter;
 use App\Models\Bill;
 use App\Models\Review;
+use App\Models\Question;
 use Carbon\Carbon;
 
 class DatabaseSeeder extends Seeder {
     public function run(): void {
+        Question::create([
+            'step_number' => 1,
+            'title' => 'Yemekler nasıldı?',
+            'subtitle' => 'Lezzet ve sunum kalitesini puanlayın',
+            'category_name' => 'Yemek Kalitesi',
+            'icon_class' => 'fas fa-utensils',
+            'key_name' => 'food',
+            'is_active' => true,
+            'sort_order' => 1
+        ]);
+
+        Question::create([
+            'step_number' => 2,
+            'title' => 'Garson ilgisi ve servis nasıldı?',
+            'subtitle' => 'Hizmet hızını ve nezaketini puanlayın',
+            'category_name' => 'Servis Kalitesi',
+            'icon_class' => 'fas fa-user-tie',
+            'key_name' => 'service',
+            'is_active' => true,
+            'sort_order' => 2
+        ]);
+
+        Question::create([
+            'step_number' => 3,
+            'title' => 'Mekan atmosferi ve temizlik nasıldı?',
+            'subtitle' => 'Ortamın ambiansı ve temizliğini puanlayın',
+            'category_name' => 'Mekan & Hijyen',
+            'icon_class' => 'fas fa-concierge-bell',
+            'key_name' => 'atmosphere',
+            'is_active' => true,
+            'sort_order' => 3
+        ]);
+
+        Question::create([
+            'step_number' => 4,
+            'title' => 'Genel Memnuniyetiniz',
+            'subtitle' => 'Son değerlendirmenizi yapın',
+            'category_name' => 'Genel Değerlendirme',
+            'icon_class' => 'fas fa-award',
+            'key_name' => 'overall',
+            'is_active' => true,
+            'sort_order' => 4
+        ]);
+
         $w1 = Waiter::create(['name' => 'Emre Çavuş', 'photo' => 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80', 'phone' => '05551112233']);
         $w2 = Waiter::create(['name' => 'Mustafa Yanan', 'photo' => 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80', 'phone' => '05552223344']);
         $w3 = Waiter::create(['name' => 'Sıla Genç', 'photo' => 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80', 'phone' => '05553334455']);

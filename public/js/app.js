@@ -2,11 +2,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
     
     let currentStep = 1;
-    const totalSteps = 4;
-    const stepBadges = ['Yemek Kalitesi', 'Servis Kalitesi', 'Mekan & Hijyen', 'Genel Değerlendirme'];
+    let totalSteps = 4;
+    let loadedQuestions = [];
 
     initAppRouter();
-    initStarRatingGroups();
     initSurveyWizard();
     initAdminLogin();
     initAdminDashboard();
@@ -32,6 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 adminDashboardApp.style.display = 'block';
                 loadAdminReviews();
                 loadMonthlyEvaluation();
+                loadAdminQuestions();
             } else {
                 customerApp.style.display = 'none';
                 adminDashboardApp.style.display = 'none';
@@ -41,7 +41,79 @@ document.addEventListener('DOMContentLoaded', () => {
             customerApp.style.display = 'block';
             adminLoginApp.style.display = 'none';
             adminDashboardApp.style.display = 'none';
+            loadCustomerQuestions();
         }
+    }
+
+    async function loadCustomerQuestions() {
+        try {
+            const res = await fetch('/api/questions?active_only=1');
+            if (res.ok) {
+                loadedQuestions = await res.json();
+                renderCustomerQuestionsUI(loadedQuestions);
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    function renderCustomerQuestionsUI(questions) {
+        const container = document.getElementById('surveyStepsContainer');
+        if (!container) return;
+
+        if (!questions || questions.length === 0) {
+            questions = [
+                { id: 1, step_number: 1, title: 'Yemekler nasıldı?', subtitle: 'Lezzet ve sunum kalitesini puanlayın', category_name: 'Yemek Kalitesi', icon_class: 'fas fa-utensils', key_name: 'food' },
+                { id: 2, step_number: 2, title: 'Garson ilgisi ve servis nasıldı?', subtitle: 'Hizmet hızını ve nezaketini puanlayın', category_name: 'Servis Kalitesi', icon_class: 'fas fa-user-tie', key_name: 'service' },
+                { id: 3, step_number: 3, title: 'Mekan atmosferi ve temizlik nasıldı?', subtitle: 'Ortamın ambiansı ve temizliğini puanlayın', category_name: 'Mekan & Hijyen', icon_class: 'fas fa-concierge-bell', key_name: 'atmosphere' },
+                { id: 4, step_number: 4, title: 'Genel Memnuniyetiniz', subtitle: 'Son değerlendirmenizi yapın', category_name: 'Genel Değerlendirme', icon_class: 'fas fa-award', key_name: 'overall' }
+            ];
+            loadedQuestions = questions;
+        }
+
+        totalSteps = questions.length;
+        const totalStepsEl = document.getElementById('totalStepsNum');
+        if (totalStepsEl) totalStepsEl.textContent = totalSteps;
+
+        let html = '';
+        questions.forEach((q, idx) => {
+            const stepNum = idx + 1;
+            const targetStarsId = `${q.key_name || 'q_' + q.id}Stars`;
+            const commentId = `${q.key_name || 'q_' + q.id}Comment`;
+            const isLast = stepNum === totalSteps;
+
+            html += `
+            <div class="survey-step ${stepNum === 1 ? 'active' : ''}" data-step="${stepNum}" data-key="${q.key_name || 'custom'}" data-qid="${q.id}">
+                <div class="step-icon"><i class="${q.icon_class || 'fas fa-star'}"></i></div>
+                <h2 class="step-heading">${q.title}</h2>
+                <p class="step-subheading">${q.subtitle || ''}</p>
+                <div class="star-rating-group" data-target="${targetStarsId}">
+                    <span class="star-btn" data-val="5"><i class="fas fa-star"></i></span>
+                    <span class="star-btn" data-val="4"><i class="fas fa-star"></i></span>
+                    <span class="star-btn" data-val="3"><i class="fas fa-star"></i></span>
+                    <span class="star-btn" data-val="2"><i class="fas fa-star"></i></span>
+                    <span class="star-btn" data-val="1"><i class="fas fa-star"></i></span>
+                </div>
+                <input type="hidden" id="${targetStarsId}" value="0">
+                ${isLast ? `
+                <div class="form-group margin-top">
+                    <input type="text" id="customerName" class="form-input" placeholder="Adınız (isteğe bağlı)" value="">
+                </div>
+                <div class="form-group">
+                    <textarea id="overallComment" class="form-input" placeholder="Genel notunuz veya öneriniz..." rows="3" maxlength="500"></textarea>
+                </div>
+                ` : `
+                <div class="form-group">
+                    <textarea id="${commentId}" class="form-input" placeholder="Bu konuyla ilgili notunuz (isteğe bağlı)..." rows="2" maxlength="300"></textarea>
+                </div>
+                `}
+            </div>`;
+        });
+
+        container.innerHTML = html;
+        initStarRatingGroups();
+        currentStep = 1;
+        updateSurveyStepUI();
     }
 
     function initStarRatingGroups() {
@@ -53,7 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
             stars.forEach(star => {
                 star.addEventListener('click', function() {
                     const val = parseInt(this.getAttribute('data-val'));
-                    hiddenInput.value = val;
+                    if (hiddenInput) hiddenInput.value = val;
                     stars.forEach(s => {
                         const sVal = parseInt(s.getAttribute('data-val'));
                         if (sVal <= val) {
@@ -98,26 +170,33 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (btnSubmit) {
             btnSubmit.addEventListener('click', async () => {
-                const overallStars = parseInt(document.getElementById('overallStars')?.value || '0');
+                const lastQ = loadedQuestions[totalSteps - 1] || {};
+                const lastStarsId = `${lastQ.key_name || 'q_' + lastQ.id}Stars`;
+                const overallStars = parseInt(document.getElementById(lastStarsId)?.value || document.getElementById('overallStars')?.value || '0');
+
                 if (overallStars === 0) {
-                    showToast('Lütfen genel memnuniyet puanınızı yıldızlarla belirtin.', 'error');
+                    showToast('Lütfen puanınızı yıldızlarla belirtin.', 'error');
                     return;
                 }
+
+                const foodStars = parseInt(document.getElementById('foodStars')?.value || '0') || null;
+                const serviceStars = parseInt(document.getElementById('serviceStars')?.value || '0') || null;
+                const atmosphereStars = parseInt(document.getElementById('atmosphereStars')?.value || '0') || null;
 
                 const payload = {
                     waiter_id: document.getElementById('surveyWaiterId')?.value || 1,
                     bill_id: document.getElementById('surveyBillId')?.value || null,
                     order_id: document.getElementById('surveyOrderId')?.value || null,
                     table_no: document.getElementById('surveyTableNo')?.value || null,
-                    food_stars: parseInt(document.getElementById('foodStars')?.value || '0') || null,
-                    food_comment: document.getElementById('foodComment')?.value.trim() || null,
-                    service_stars: parseInt(document.getElementById('serviceStars')?.value || '0') || null,
-                    service_comment: document.getElementById('serviceComment')?.value.trim() || null,
-                    atmosphere_stars: parseInt(document.getElementById('atmosphereStars')?.value || '0') || null,
-                    atmosphere_comment: document.getElementById('atmosphereComment')?.value.trim() || null,
+                    food_stars: foodStars || overallStars,
+                    food_comment: document.getElementById('foodComment')?.value?.trim() || null,
+                    service_stars: serviceStars || overallStars,
+                    service_comment: document.getElementById('serviceComment')?.value?.trim() || null,
+                    atmosphere_stars: atmosphereStars || overallStars,
+                    atmosphere_comment: document.getElementById('atmosphereComment')?.value?.trim() || null,
                     overall_stars: overallStars,
-                    comment: document.getElementById('overallComment')?.value.trim() || null,
-                    customer_name: document.getElementById('customerName')?.value.trim() || 'Misafir'
+                    comment: document.getElementById('overallComment')?.value?.trim() || null,
+                    customer_name: document.getElementById('customerName')?.value?.trim() || 'Misafir'
                 };
 
                 btnSubmit.disabled = true;
@@ -160,11 +239,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getStepStarValue(step) {
-        if (step === 1) return parseInt(document.getElementById('foodStars')?.value || '0');
-        if (step === 2) return parseInt(document.getElementById('serviceStars')?.value || '0');
-        if (step === 3) return parseInt(document.getElementById('atmosphereStars')?.value || '0');
-        if (step === 4) return parseInt(document.getElementById('overallStars')?.value || '0');
-        return 0;
+        const stepEl = document.querySelector(`.survey-step[data-step="${step}"]`);
+        if (!stepEl) return 0;
+        const targetId = stepEl.querySelector('.star-rating-group')?.getAttribute('data-target');
+        if (!targetId) return 0;
+        return parseInt(document.getElementById(targetId)?.value || '0');
     }
 
     function updateSurveyStepUI() {
@@ -179,14 +258,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const progressFill = document.getElementById('surveyProgressFill');
         if (progressFill) {
-            progressFill.style.width = `${(currentStep / totalSteps) * 100}%`;
+            progressFill.style.width = `${(currentStep / Math.max(totalSteps, 1)) * 100}%`;
         }
 
         const stepNumEl = document.getElementById('currentStepNum');
         if (stepNumEl) stepNumEl.textContent = currentStep;
 
         const badgeEl = document.getElementById('stepTitleBadge');
-        if (badgeEl) badgeEl.textContent = stepBadges[currentStep - 1];
+        if (badgeEl && loadedQuestions[currentStep - 1]) {
+            badgeEl.textContent = loadedQuestions[currentStep - 1].category_name || `Adım ${currentStep}`;
+        }
 
         const btnPrev = document.getElementById('btnPrevStep');
         const btnNext = document.getElementById('btnNextStep');
@@ -349,6 +430,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         window.location.hash = '#admin';
                         loadAdminReviews();
                         loadMonthlyEvaluation();
+                        loadAdminQuestions();
                     } else {
                         errorMsg.textContent = data.message || 'Giriş başarısız.';
                         errorMsg.style.display = 'block';
@@ -378,6 +460,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.classList.add('active');
                 const targetTab = this.getAttribute('data-tab');
                 document.getElementById(targetTab)?.classList.add('active');
+
+                if (targetTab === 'tabQuestions') {
+                    loadAdminQuestions();
+                }
             });
         });
 
@@ -405,6 +491,180 @@ document.addEventListener('DOMContentLoaded', () => {
                 loadMonthlyEvaluation();
             });
         }
+
+        initQuestionManagementForm();
+    }
+
+    function initQuestionManagementForm() {
+        const form = document.getElementById('questionForm');
+        const btnCancel = document.getElementById('btnCancelQuestionEdit');
+
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const editId = document.getElementById('qEditId').value;
+                const title = document.getElementById('qTitle').value.trim();
+                const subtitle = document.getElementById('qSubtitle').value.trim();
+                const category = document.getElementById('qCategory').value.trim();
+                const icon = document.getElementById('qIcon').value.trim() || 'fas fa-star';
+                const sortOrder = parseInt(document.getElementById('qSortOrder').value || '1');
+                const isActive = parseInt(document.getElementById('qIsActive').value || '1');
+
+                const payload = {
+                    title: title,
+                    subtitle: subtitle,
+                    category_name: category,
+                    icon_class: icon,
+                    sort_order: sortOrder,
+                    is_active: isActive
+                };
+
+                const url = editId ? `/api/admin/questions/${editId}` : '/api/admin/questions';
+                const method = editId ? 'PUT' : 'POST';
+
+                try {
+                    const res = await fetch(url, {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': csrfToken
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (res.ok) {
+                        showToast(editId ? 'Soru başarıyla güncellendi!' : 'Yeni soru başarıyla eklendi!', 'success');
+                        resetQuestionForm();
+                        loadAdminQuestions();
+                        loadCustomerQuestions();
+                    } else {
+                        showToast('İşlem sırasında hata oluştu.', 'error');
+                    }
+                } catch (e) {
+                    showToast('Sunucu hatası oluştu.', 'error');
+                }
+            });
+        }
+
+        if (btnCancel) {
+            btnCancel.addEventListener('click', () => {
+                resetQuestionForm();
+            });
+        }
+    }
+
+    function resetQuestionForm() {
+        document.getElementById('qEditId').value = '';
+        document.getElementById('qTitle').value = '';
+        document.getElementById('qSubtitle').value = '';
+        document.getElementById('qCategory').value = '';
+        document.getElementById('qIcon').value = 'fas fa-star';
+        document.getElementById('qSortOrder').value = '1';
+        document.getElementById('qIsActive').value = '1';
+
+        const header = document.getElementById('questionFormHeader');
+        if (header) header.innerHTML = `<i class="fas fa-plus-circle"></i> Yeni Anket Sorusu Ekle`;
+
+        const btnCancel = document.getElementById('btnCancelQuestionEdit');
+        if (btnCancel) btnCancel.style.display = 'none';
+
+        const btnSave = document.getElementById('btnSaveQuestion');
+        if (btnSave) btnSave.innerHTML = `<i class="fas fa-save"></i> Soruyu Kaydet`;
+    }
+
+    async function loadAdminQuestions() {
+        const tbody = document.getElementById('adminQuestionsTbody');
+        if (!tbody) return;
+
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center">Sorular yükleniyor...</td></tr>`;
+
+        try {
+            const res = await fetch('/api/questions');
+            if (res.ok) {
+                const questions = await res.json();
+                renderAdminQuestionsTable(questions);
+            }
+        } catch (e) {
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center">Sorular yüklenirken hata oluştu.</td></tr>`;
+        }
+    }
+
+    function renderAdminQuestionsTable(questions) {
+        const tbody = document.getElementById('adminQuestionsTbody');
+        if (!tbody) return;
+
+        if (questions.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center">Kayıtlı anket sorusu bulunmuyor.</td></tr>`;
+            return;
+        }
+
+        let html = '';
+        questions.forEach(q => {
+            html += `<tr>
+                <td><strong>${q.sort_order || q.step_number || 1}</strong></td>
+                <td><span class="step-badge">${q.category_name}</span></td>
+                <td><i class="${q.icon_class || 'fas fa-star'}"></i></td>
+                <td><strong>${q.title}</strong></td>
+                <td>${q.subtitle || '-'}</td>
+                <td>${q.is_active ? '<span class="status-badge status-open">Aktif</span>' : '<span class="status-badge status-closed">Pasif</span>'}</td>
+                <td style="text-align:right">
+                    <button class="btn btn-sm btn-outline btn-edit-q" data-q='${JSON.stringify(q)}'><i class="fas fa-edit"></i> Düzenle</button>
+                    <button class="btn btn-sm btn-outline-danger btn-delete-q" data-id="${q.id}"><i class="fas fa-trash"></i> Sil</button>
+                </td>
+            </tr>`;
+        });
+
+        tbody.innerHTML = html;
+
+        tbody.querySelectorAll('.btn-edit-q').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const q = JSON.parse(this.getAttribute('data-q'));
+                document.getElementById('qEditId').value = q.id;
+                document.getElementById('qTitle').value = q.title || '';
+                document.getElementById('qSubtitle').value = q.subtitle || '';
+                document.getElementById('qCategory').value = q.category_name || '';
+                document.getElementById('qIcon').value = q.icon_class || 'fas fa-star';
+                document.getElementById('qSortOrder').value = q.sort_order || 1;
+                document.getElementById('qIsActive').value = q.is_active ? '1' : '0';
+
+                const header = document.getElementById('questionFormHeader');
+                if (header) header.innerHTML = `<i class="fas fa-edit"></i> Soruyu Düzenle (#${q.id})`;
+
+                const btnCancel = document.getElementById('btnCancelQuestionEdit');
+                if (btnCancel) btnCancel.style.display = 'inline-flex';
+
+                const btnSave = document.getElementById('btnSaveQuestion');
+                if (btnSave) btnSave.innerHTML = `<i class="fas fa-save"></i> Güncelle`;
+
+                document.getElementById('tabQuestions')?.scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+
+        tbody.querySelectorAll('.btn-delete-q').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                const id = this.getAttribute('data-id');
+                if (confirm('Bu soruyu silmek istediğinize emin misiniz?')) {
+                    try {
+                        const res = await fetch(`/api/admin/questions/${id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': csrfToken
+                            }
+                        });
+
+                        if (res.ok) {
+                            showToast('Soru başarıyla silindi.', 'success');
+                            loadAdminQuestions();
+                            loadCustomerQuestions();
+                        } else {
+                            showToast('Soru silinirken bir hata oluştu.', 'error');
+                        }
+                    } catch (e) {
+                        showToast('Sunucu hatası oluştu.', 'error');
+                    }
+                }
+            });
+        });
     }
 
     async function loadAdminReviews() {

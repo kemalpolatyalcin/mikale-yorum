@@ -42,7 +42,7 @@
                         <div class="survey-progress-fill" id="surveyProgressFill"></div>
                     </div>
                     <div class="survey-step-indicator">
-                        <span>Soru <strong id="currentStepNum">1</strong> / 4</span>
+                        <span>Soru <strong id="currentStepNum">1</strong> / <span id="totalStepsNum">4</span></span>
                         <span id="stepTitleBadge" class="step-badge">Yemek Kalitesi</span>
                     </div>
 
@@ -52,76 +52,7 @@
                         <input type="hidden" id="surveyTableNo" value="">
                         <input type="hidden" id="surveyWaiterId" value="1">
 
-                        <div class="survey-step active" data-step="1">
-                            <div class="step-icon"><i class="fas fa-utensils"></i></div>
-                            <h2 class="step-heading">Yemekler nasıldı?</h2>
-                            <p class="step-subheading">Lezzet ve sunum kalitesini puanlayın</p>
-                            <div class="star-rating-group" data-target="foodStars">
-                                <span class="star-btn" data-val="5"><i class="fas fa-star"></i></span>
-                                <span class="star-btn" data-val="4"><i class="fas fa-star"></i></span>
-                                <span class="star-btn" data-val="3"><i class="fas fa-star"></i></span>
-                                <span class="star-btn" data-val="2"><i class="fas fa-star"></i></span>
-                                <span class="star-btn" data-val="1"><i class="fas fa-star"></i></span>
-                            </div>
-                            <input type="hidden" id="foodStars" value="0">
-                            <div class="form-group">
-                                <textarea id="foodComment" class="form-input" placeholder="Yemeklerle ilgili notunuz (isteğe bağlı)..." rows="2" maxlength="300"></textarea>
-                            </div>
-                        </div>
-
-                        <div class="survey-step" data-step="2">
-                            <div class="step-icon"><i class="fas fa-user-tie"></i></div>
-                            <h2 class="step-heading">Garson ilgisi ve servis nasıldı?</h2>
-                            <p class="step-subheading">Hizmet hızını ve nezaketini puanlayın</p>
-                            <div class="star-rating-group" data-target="serviceStars">
-                                <span class="star-btn" data-val="5"><i class="fas fa-star"></i></span>
-                                <span class="star-btn" data-val="4"><i class="fas fa-star"></i></span>
-                                <span class="star-btn" data-val="3"><i class="fas fa-star"></i></span>
-                                <span class="star-btn" data-val="2"><i class="fas fa-star"></i></span>
-                                <span class="star-btn" data-val="1"><i class="fas fa-star"></i></span>
-                            </div>
-                            <input type="hidden" id="serviceStars" value="0">
-                            <div class="form-group">
-                                <textarea id="serviceComment" class="form-input" placeholder="Servis ile ilgili görüşünüz (isteğe bağlı)..." rows="2" maxlength="300"></textarea>
-                            </div>
-                        </div>
-
-                        <div class="survey-step" data-step="3">
-                            <div class="step-icon"><i class="fas fa-concierge-bell"></i></div>
-                            <h2 class="step-heading">Mekan atmosferi ve temizlik nasıldı?</h2>
-                            <p class="step-subheading">Ortamın ambiansı ve temizliğini puanlayın</p>
-                            <div class="star-rating-group" data-target="atmosphereStars">
-                                <span class="star-btn" data-val="5"><i class="fas fa-star"></i></span>
-                                <span class="star-btn" data-val="4"><i class="fas fa-star"></i></span>
-                                <span class="star-btn" data-val="3"><i class="fas fa-star"></i></span>
-                                <span class="star-btn" data-val="2"><i class="fas fa-star"></i></span>
-                                <span class="star-btn" data-val="1"><i class="fas fa-star"></i></span>
-                            </div>
-                            <input type="hidden" id="atmosphereStars" value="0">
-                            <div class="form-group">
-                                <textarea id="atmosphereComment" class="form-input" placeholder="Mekan ile ilgili notunuz (isteğe bağlı)..." rows="2" maxlength="300"></textarea>
-                            </div>
-                        </div>
-
-                        <div class="survey-step" data-step="4">
-                            <div class="step-icon"><i class="fas fa-award"></i></div>
-                            <h2 class="step-heading">Genel Memnuniyetiniz</h2>
-                            <p class="step-subheading">Son değerlendirmenizi yapın</p>
-                            <div class="star-rating-group" data-target="overallStars">
-                                <span class="star-btn" data-val="5"><i class="fas fa-star"></i></span>
-                                <span class="star-btn" data-val="4"><i class="fas fa-star"></i></span>
-                                <span class="star-btn" data-val="3"><i class="fas fa-star"></i></span>
-                                <span class="star-btn" data-val="2"><i class="fas fa-star"></i></span>
-                                <span class="star-btn" data-val="1"><i class="fas fa-star"></i></span>
-                            </div>
-                            <input type="hidden" id="overallStars" value="0">
-                            <div class="form-group margin-top">
-                                <input type="text" id="customerName" class="form-input" placeholder="Adınız (isteğe bağlı)" value="">
-                            </div>
-                            <div class="form-group">
-                                <textarea id="overallComment" class="form-input" placeholder="Genel notunuz veya öneriniz..." rows="3" maxlength="500"></textarea>
-                            </div>
-                        </div>
+                        <div id="surveyStepsContainer"></div>
 
                         <div class="survey-actions">
                             <button type="button" class="btn btn-secondary" id="btnPrevStep" style="display:none">
@@ -234,6 +165,7 @@
                 <div class="admin-nav-tabs">
                     <button class="tab-btn active" data-tab="tabReviews"><i class="fas fa-list-alt"></i> Sipariş & Garson Yorumları</button>
                     <button class="tab-btn" data-tab="tabMonthlyEval"><i class="fas fa-chart-line"></i> Ay Sonu Değerlendirmesi</button>
+                    <button class="tab-btn" data-tab="tabQuestions"><i class="fas fa-question-circle"></i> Soru Yönetimi</button>
                 </div>
 
                 <div class="tab-content active" id="tabReviews">
@@ -348,6 +280,75 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="tab-content" id="tabQuestions">
+                    <div class="card filter-card">
+                        <div class="card-header" id="questionFormHeader"><i class="fas fa-plus-circle"></i> Yeni Anket Sorusu Ekle</div>
+                        <div class="card-body">
+                            <form id="questionForm" onsubmit="return false;">
+                                <input type="hidden" id="qEditId" value="">
+                                <div class="filter-grid">
+                                    <div class="filter-item">
+                                        <label>Soru Başlığı</label>
+                                        <input type="text" id="qTitle" class="form-input" placeholder="Örn: Yemekler nasıldı?" required>
+                                    </div>
+                                    <div class="filter-item">
+                                        <label>Alt Başlık / Açıklama</label>
+                                        <input type="text" id="qSubtitle" class="form-input" placeholder="Örn: Lezzet ve sunum kalitesini puanlayın">
+                                    </div>
+                                    <div class="filter-item">
+                                        <label>Kategori Rozet Adı</label>
+                                        <input type="text" id="qCategory" class="form-input" placeholder="Örn: Yemek Kalitesi" required>
+                                    </div>
+                                    <div class="filter-item">
+                                        <label>İkon Class (FontAwesome)</label>
+                                        <input type="text" id="qIcon" class="form-input" placeholder="fas fa-utensils">
+                                    </div>
+                                    <div class="filter-item">
+                                        <label>Sıralama No</label>
+                                        <input type="number" id="qSortOrder" class="form-input" placeholder="1" value="1">
+                                    </div>
+                                    <div class="filter-item">
+                                        <label>Durum</label>
+                                        <select id="qIsActive" class="form-input">
+                                            <option value="1">Aktif</option>
+                                            <option value="0">Pasif</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="filter-actions">
+                                    <button type="submit" class="btn btn-gold" id="btnSaveQuestion"><i class="fas fa-save"></i> Soruyu Kaydet</button>
+                                    <button type="button" class="btn btn-secondary" id="btnCancelQuestionEdit" style="display:none"><i class="fas fa-times"></i> İptal</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="card table-card">
+                        <div class="card-header"><i class="fas fa-question-circle"></i> Mevcut Anket Soruları</div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="admin-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Sıra</th>
+                                            <th>Kategori</th>
+                                            <th>İkon</th>
+                                            <th>Soru Başlığı</th>
+                                            <th>Alt Başlık</th>
+                                            <th>Durum</th>
+                                            <th style="text-align:right">İşlemler</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="adminQuestionsTbody">
+                                        <tr><td colspan="7" class="text-center">Yükleniyor...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 use App\Models\Bill;
 use App\Models\Review;
 use App\Models\Waiter;
+use App\Models\Question;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 
@@ -11,7 +12,8 @@ class MainController extends Controller {
     public function index() {
         $reviews = Review::with('waiter')->latest()->take(10)->get();
         $waiters = Waiter::all();
-        return view('main', compact('reviews', 'waiters'));
+        $questions = Question::where('is_active', true)->orderBy('sort_order', 'asc')->get();
+        return view('main', compact('reviews', 'waiters', 'questions'));
     }
 
     public function adminLogin(Request $request) {
@@ -191,6 +193,74 @@ class MainController extends Controller {
             'month' => (int)$month,
             'year' => (int)$year,
             'waiters' => $report
+        ]);
+    }
+
+    public function getQuestions(Request $request) {
+        $query = Question::orderBy('sort_order', 'asc');
+        if ($request->has('active_only')) {
+            $query->where('is_active', true);
+        }
+        $questions = $query->get();
+        return response()->json($questions);
+    }
+
+    public function storeQuestion(Request $request) {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'subtitle' => 'nullable|string|max:255',
+            'category_name' => 'required|string|max:100',
+            'icon_class' => 'nullable|string|max:100',
+            'key_name' => 'nullable|string|max:50',
+            'sort_order' => 'nullable|integer',
+            'is_active' => 'nullable|boolean'
+        ]);
+
+        if (empty($validated['icon_class'])) {
+            $validated['icon_class'] = 'fas fa-star';
+        }
+        if (empty($validated['key_name'])) {
+            $validated['key_name'] = 'custom_' . time();
+        }
+        if (!isset($validated['sort_order'])) {
+            $validated['sort_order'] = Question::max('sort_order') + 1;
+        }
+
+        $question = Question::create($validated);
+        $question->update(['step_number' => $question->sort_order]);
+
+        return response()->json([
+            'success' => true,
+            'question' => $question
+        ]);
+    }
+
+    public function updateQuestion(Request $request, $id) {
+        $question = Question::findOrFail($id);
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'subtitle' => 'nullable|string|max:255',
+            'category_name' => 'required|string|max:100',
+            'icon_class' => 'nullable|string|max:100',
+            'key_name' => 'nullable|string|max:50',
+            'sort_order' => 'nullable|integer',
+            'is_active' => 'nullable|boolean'
+        ]);
+
+        $question->update($validated);
+
+        return response()->json([
+            'success' => true,
+            'question' => $question
+        ]);
+    }
+
+    public function deleteQuestion($id) {
+        $question = Question::findOrFail($id);
+        $question->delete();
+
+        return response()->json([
+            'success' => true
         ]);
     }
 }

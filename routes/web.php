@@ -14,3 +14,8 @@ Route::put('/api/bill/{id}/print', [MainController::class, 'printBill']);
 Route::post('/api/review', [MainController::class, 'submitReview']);
 Route::get('/api/reviews', [MainController::class, 'getReviews']);
 Route::get('/api/admin/monthly-evaluation', [MainController::class, 'getMonthlyEvaluation']);
+
+Route::get('/api/questions', [MainController::class, 'getQuestions']);
+Route::post('/api/admin/questions', [MainController::class, 'storeQuestion']);
+Route::put('/api/admin/questions/{id}', [MainController::class, 'updateQuestion']);
+Route::delete('/api/admin/questions/{id}', [MainController::class, 'deleteQuestion']);
